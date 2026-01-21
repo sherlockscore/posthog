@@ -49,6 +49,9 @@ if (not empty(inputs.anonymousId)) {
 // Type-specific fields
 if (type == 'track') {
     body.event := toString(inputs.event)
+    if (not empty(inputs.groupId)) {
+        body.context := {'groupId': toString(inputs.groupId)}
+    }
 } else if (type == 'page' or type == 'screen') {
     // Return early if we can't parse a page/screen name to avoid sending useless events
     if (empty(inputs.name)) {
@@ -56,6 +59,9 @@ if (type == 'track') {
     }
 
     body.name := toString(inputs.name)
+    if (not empty(inputs.groupId)) {
+        body.context := {'groupId': toString(inputs.groupId)}
+    }
 } else if (type == 'identify') {
     let traits := {}
 
@@ -202,6 +208,15 @@ if (res.status >= 400) {
                     default: '{event.event}',
                     required: false,
                 },
+                {
+                    key: 'groupId',
+                    type: 'string',
+                    label: 'Group ID',
+                    description:
+                        'Optional group identifier to associate with this event. Replace "company" with your group type name if different (e.g., {groups.organization.id}).',
+                    default: '{groups.company.id}',
+                    required: false,
+                },
             ],
         },
         {
@@ -239,6 +254,15 @@ if (res.status >= 400) {
                     default: '{event.properties.title ?? event.properties.$pathname}',
                     required: false,
                 },
+                {
+                    key: 'groupId',
+                    type: 'string',
+                    label: 'Group ID',
+                    description:
+                        'Optional group identifier to associate with this event. Replace "company" with your group type name if different (e.g., {groups.organization.id}).',
+                    default: '{groups.company.id}',
+                    required: false,
+                },
             ],
         },
         {
@@ -274,6 +298,15 @@ if (res.status >= 400) {
                     label: 'Screen Name',
                     description: 'Name of the screen being viewed',
                     default: '{event.properties.$screen_name}',
+                    required: false,
+                },
+                {
+                    key: 'groupId',
+                    type: 'string',
+                    label: 'Group ID',
+                    description:
+                        'Optional group identifier to associate with this event. Replace "company" with your group type name if different (e.g., {groups.organization.id}).',
+                    default: '{groups.company.id}',
                     required: false,
                 },
             ],

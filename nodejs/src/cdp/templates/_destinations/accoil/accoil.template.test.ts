@@ -126,6 +126,7 @@ describe('accoil template', () => {
                 {
                     userId: 'user-123',
                     name: 'Homepage',
+                    groupId: '',
                 }
             )
 
@@ -135,6 +136,7 @@ describe('accoil template', () => {
             const body = parseJSON((response.invocation!.queueParameters as any).body)
             expect(body.type).toBe('page')
             expect(body.name).toBe('Homepage')
+            expect(body.context).toBeUndefined()
         })
 
         it('should handle $screen events as screen calls', async () => {
@@ -153,6 +155,7 @@ describe('accoil template', () => {
                 },
                 {
                     name: 'ProductScreen',
+                    groupId: '',
                 }
             )
 
@@ -162,6 +165,7 @@ describe('accoil template', () => {
             const body = parseJSON((response.invocation!.queueParameters as any).body)
             expect(body.type).toBe('screen')
             expect(body.name).toBe('ProductScreen')
+            expect(body.context).toBeUndefined()
         })
 
         it('should handle $groupidentify events as group calls', async () => {
@@ -225,6 +229,7 @@ describe('accoil template', () => {
                 {
                     userId: 'user-123',
                     event: 'Product Viewed',
+                    groupId: '',
                 }
             )
 
@@ -234,6 +239,7 @@ describe('accoil template', () => {
             const body = parseJSON((response.invocation!.queueParameters as any).body)
             expect(body.type).toBe('track')
             expect(body.event).toBe('Product Viewed')
+            expect(body.context).toBeUndefined()
         })
     })
 
@@ -255,6 +261,7 @@ describe('accoil template', () => {
                 },
                 {
                     event: 'custom_button_click',
+                    groupId: '',
                 }
             )
 
@@ -280,7 +287,9 @@ describe('accoil template', () => {
                         properties: {},
                     },
                 },
-                {}
+                {
+                    groupId: '',
+                }
             )
 
             // The function should finish early and not create any queue parameters
@@ -302,6 +311,7 @@ describe('accoil template', () => {
                 },
                 {
                     event: 'spinner_unloaded',
+                    groupId: '',
                 }
             )
 
@@ -326,7 +336,9 @@ describe('accoil template', () => {
                         properties: {},
                     },
                 },
-                {}
+                {
+                    groupId: '',
+                }
             )
 
             expect(response.error).toBeUndefined()
@@ -352,6 +364,7 @@ describe('accoil template', () => {
                 },
                 {
                     event: 'test_event',
+                    groupId: '',
                 }
             )
 
@@ -378,6 +391,7 @@ describe('accoil template', () => {
                 },
                 {
                     event: 'test_event',
+                    groupId: '',
                 }
             )
 
@@ -487,6 +501,7 @@ describe('accoil template', () => {
                 },
                 {
                     event: 'test_event',
+                    groupId: '',
                 }
             )
 
@@ -512,6 +527,7 @@ describe('accoil template', () => {
                 },
                 {
                     event: 'test_event',
+                    groupId: '',
                 }
             )
 
@@ -662,6 +678,7 @@ describe('accoil template', () => {
                 },
                 {
                     name: '', // Empty page name
+                    groupId: '',
                 }
             )
 
@@ -687,6 +704,7 @@ describe('accoil template', () => {
                 },
                 {
                     name: null, // Template evaluates to null when properties are missing
+                    groupId: '',
                 }
             )
 
@@ -709,6 +727,7 @@ describe('accoil template', () => {
                 },
                 {
                     name: '', // Empty screen name
+                    groupId: '',
                 }
             )
 
@@ -733,6 +752,7 @@ describe('accoil template', () => {
                 },
                 {
                     name: 'Test Page',
+                    groupId: '',
                 }
             )
 
@@ -742,6 +762,120 @@ describe('accoil template', () => {
             const body = parseJSON((response.invocation!.queueParameters as any).body)
             expect(body.type).toBe('page')
             expect(body.name).toBe('Test Page')
+        })
+    })
+
+    describe('groupId context', () => {
+        it('should include context with groupId for track calls when groupId is provided', async () => {
+            const response = await tester.invokeMapping(
+                'Track Calls',
+                baseInputs,
+                {
+                    event: {
+                        event: 'Button Clicked',
+                        distinct_id: 'user-123',
+                        timestamp: '2024-01-01T00:00:00Z',
+                        properties: {},
+                    },
+                },
+                {
+                    userId: 'user-123',
+                    event: 'Button Clicked',
+                    groupId: 'company-456',
+                }
+            )
+
+            expect(response.error).toBeUndefined()
+            expect(response.invocation).toBeDefined()
+            expect(response.invocation.queueParameters).toBeDefined()
+            const body = parseJSON((response.invocation!.queueParameters as any).body)
+            expect(body.type).toBe('track')
+            expect(body.context).toEqual({ groupId: 'company-456' })
+        })
+
+        it('should include context with groupId for page calls when groupId is provided', async () => {
+            const response = await tester.invokeMapping(
+                'Page Calls',
+                baseInputs,
+                {
+                    event: {
+                        event: '$pageview',
+                        distinct_id: 'user-123',
+                        timestamp: '2024-01-01T00:00:00Z',
+                        properties: {
+                            title: 'Dashboard',
+                        },
+                    },
+                },
+                {
+                    userId: 'user-123',
+                    name: 'Dashboard',
+                    groupId: 'company-789',
+                }
+            )
+
+            expect(response.error).toBeUndefined()
+            expect(response.invocation).toBeDefined()
+            expect(response.invocation.queueParameters).toBeDefined()
+            const body = parseJSON((response.invocation!.queueParameters as any).body)
+            expect(body.type).toBe('page')
+            expect(body.context).toEqual({ groupId: 'company-789' })
+        })
+
+        it('should include context with groupId for screen calls when groupId is provided', async () => {
+            const response = await tester.invokeMapping(
+                'Screen Calls',
+                baseInputs,
+                {
+                    event: {
+                        event: '$screen',
+                        distinct_id: 'user-123',
+                        timestamp: '2024-01-01T00:00:00Z',
+                        properties: {
+                            $screen_name: 'SettingsScreen',
+                        },
+                    },
+                },
+                {
+                    userId: 'user-123',
+                    name: 'SettingsScreen',
+                    groupId: 'org-101',
+                }
+            )
+
+            expect(response.error).toBeUndefined()
+            expect(response.invocation).toBeDefined()
+            expect(response.invocation.queueParameters).toBeDefined()
+            const body = parseJSON((response.invocation!.queueParameters as any).body)
+            expect(body.type).toBe('screen')
+            expect(body.context).toEqual({ groupId: 'org-101' })
+        })
+
+        it('should not include context when groupId is empty string', async () => {
+            const response = await tester.invokeMapping(
+                'Track Calls',
+                baseInputs,
+                {
+                    event: {
+                        event: 'Test Event',
+                        distinct_id: 'user-123',
+                        timestamp: '2024-01-01T00:00:00Z',
+                        properties: {},
+                    },
+                },
+                {
+                    userId: 'user-123',
+                    event: 'Test Event',
+                    groupId: '',
+                }
+            )
+
+            expect(response.error).toBeUndefined()
+            expect(response.invocation).toBeDefined()
+            expect(response.invocation.queueParameters).toBeDefined()
+            const body = parseJSON((response.invocation!.queueParameters as any).body)
+            expect(body.type).toBe('track')
+            expect(body.context).toBeUndefined()
         })
     })
 })
